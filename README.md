@@ -9,3 +9,4 @@ Shared core library for `gion` and `gionx`.
 - `repospec`: normalizes repo spec strings (`git@...`, `https://...`, `file://...`) into canonical repo keys.
 - `repostore`: shared bare-repo store path/list utilities.
 - `gitparse`: parsers for git command output (e.g., `ls-remote --symref`).
+- `gitref`: remote-branch ref parsers.
