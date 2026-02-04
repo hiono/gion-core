@@ -11,3 +11,4 @@ Shared core library for `gion` and `gionx`.
 - `gitparse`: parsers for git command output (e.g., `ls-remote --symref`).
 - `gitref`: remote-branch ref parsers.
 - `importplan`: inventory reconstruction helpers used by `gion import`.
+- `manifestlsplan`: computes drift categories/counts for `manifest ls`.
