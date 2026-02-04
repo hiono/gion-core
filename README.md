@@ -12,3 +12,4 @@ Shared core library for `gion` and `gionx`.
 - `gitref`: remote-branch ref parsers.
 - `importplan`: inventory reconstruction helpers used by `gion import`.
 - `manifestlsplan`: computes drift categories/counts for `manifest ls`.
+- `workspacerisk`: aggregate repo-level risk into workspace-level risk.
