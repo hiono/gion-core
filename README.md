@@ -10,6 +10,7 @@ Shared core library for `gion` and `gionx`.
 - `repostore`: shared bare-repo store path/list utilities.
 - `gitparse`: parsers for git command output (e.g., `ls-remote --symref`).
 - `gitref`: remote-branch ref parsers.
+- `gcplan`: helper logic for manifest-gc fetch planning.
 - `importplan`: inventory reconstruction helpers used by `gion import`.
 - `manifestlsplan`: computes drift categories/counts for `manifest ls`.
 - `workspacerisk`: aggregate repo-level risk into workspace-level risk.
