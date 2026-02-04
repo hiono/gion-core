@@ -6,3 +6,4 @@ Shared core library for `gion` and `gionx`.
 
 - `planner`: computes workspace/repo diffs from desired vs actual inventory.
 - `applyplan`: evaluates apply-time semantics (destructive change detection, safe branch rename checks, change counters).
+- `repospec`: normalizes repo spec strings (`git@...`, `https://...`, `file://...`) into canonical repo keys.
