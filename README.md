@@ -14,3 +14,11 @@ Shared core library for `gion` and `gionx`.
 - `importplan`: inventory reconstruction helpers used by `gion import`.
 - `manifestlsplan`: computes drift categories/counts for `manifest ls`.
 - `workspacerisk`: aggregate repo-level risk into workspace-level risk.
+
+## Development
+
+Run local checks:
+
+- `go test ./...`
+- `go vet ./...`
+- `go build ./...`
