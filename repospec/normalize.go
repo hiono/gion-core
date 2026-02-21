@@ -14,6 +14,10 @@ type Spec struct {
 }
 
 func Normalize(input string) (Spec, error) {
+	return NormalizeWithBasePath(input, "")
+}
+
+func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 	trimmed := strings.TrimSpace(input)
 	if trimmed == "" {
 		return Spec{}, fmt.Errorf("repo spec is empty")
@@ -21,9 +25,11 @@ func Normalize(input string) (Spec, error) {
 
 	var host string
 	var path string
+	var isSSH bool
 
 	switch {
 	case strings.HasPrefix(trimmed, "git@"):
+		isSSH = true
 		at := strings.Index(trimmed, "@")
 		if at < 0 {
 			return Spec{}, fmt.Errorf("invalid ssh repo spec: %q", input)
@@ -64,6 +70,10 @@ func Normalize(input string) (Spec, error) {
 		return Spec{}, fmt.Errorf("repo spec must be ssh, https, or file: %q", input)
 	}
 
+	if basePath != "" && !isSSH {
+		path = removeBasePath(path, basePath)
+	}
+
 	owner, repo, err := splitOwnerRepo(path)
 	if err != nil {
 		return Spec{}, err
@@ -79,6 +89,15 @@ func Normalize(input string) (Spec, error) {
 		RepoKey: fmt.Sprintf("%s/%s/%s", host, owner, repo),
 	}
 	return spec, nil
+}
+
+func removeBasePath(path string, basePath string) string {
+	basePath = strings.Trim(basePath, "/")
+	if basePath == "" {
+		return path
+	}
+	path = strings.TrimPrefix(path, basePath+"/")
+	return path
 }
 
 func splitOwnerRepo(path string) (string, string, error) {
