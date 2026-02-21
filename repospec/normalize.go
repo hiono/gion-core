@@ -25,12 +25,21 @@ func Normalize(input string) (Spec, error) {
 	switch {
 	case strings.HasPrefix(trimmed, "git@"):
 		at := strings.Index(trimmed, "@")
-		colon := strings.Index(trimmed, ":")
-		if at < 0 || colon < 0 || colon < at {
+		if at < 0 {
 			return Spec{}, fmt.Errorf("invalid ssh repo spec: %q", input)
 		}
-		host = trimmed[at+1 : colon]
-		path = trimmed[colon+1:]
+		rest := trimmed[at+1:]
+		colons := findAllColons(rest)
+		if len(colons) == 0 {
+			return Spec{}, fmt.Errorf("invalid ssh repo spec: %q", input)
+		}
+		if len(colons) >= 2 && isPort(rest[colons[0]+1:colons[1]]) {
+			host = rest[:colons[0]]
+			path = rest[colons[1]+1:]
+		} else {
+			host = rest[:colons[0]]
+			path = rest[colons[0]+1:]
+		}
 	case strings.HasPrefix(trimmed, "https://"):
 		u, err := url.Parse(trimmed)
 		if err != nil {
@@ -79,15 +88,40 @@ func splitOwnerRepo(path string) (string, string, error) {
 	}
 
 	parts := strings.Split(trimmed, "/")
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("repo path must be <owner>/<repo>")
+	if len(parts) < 2 {
+		return "", "", fmt.Errorf("repo path must have at least owner/repo")
 	}
 
-	owner := parts[0]
-	repo := strings.TrimSuffix(parts[1], ".git")
-	if owner == "" || repo == "" {
-		return "", "", fmt.Errorf("owner/repo cannot be empty")
+	repo := strings.TrimSuffix(parts[len(parts)-1], ".git")
+	if repo == "" {
+		return "", "", fmt.Errorf("repo name cannot be empty")
+	}
+	owner := strings.Join(parts[:len(parts)-1], "/")
+	if owner == "" {
+		return "", "", fmt.Errorf("owner/namespace cannot be empty")
 	}
 
 	return owner, repo, nil
+}
+
+func findAllColons(s string) []int {
+	var indices []int
+	for i := 0; i < len(s); i++ {
+		if s[i] == ':' {
+			indices = append(indices, i)
+		}
+	}
+	return indices
+}
+
+func isPort(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }

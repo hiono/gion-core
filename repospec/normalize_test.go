@@ -15,9 +15,29 @@ func TestNormalize(t *testing.T) {
 			wantKey: "github.com/org/repo",
 		},
 		{
+			name:    "ssh with port",
+			input:   "git@gitlab.example.com:2222:org/repo.git",
+			wantKey: "gitlab.example.com/org/repo",
+		},
+		{
+			name:    "ssh nested group",
+			input:   "git@gitlab.example.com:org/subgroup/team/repo.git",
+			wantKey: "gitlab.example.com/org/subgroup/team/repo",
+		},
+		{
+			name:    "ssh with port nested group",
+			input:   "git@gitlab.example.com:2222:org/subgroup/team/repo.git",
+			wantKey: "gitlab.example.com/org/subgroup/team/repo",
+		},
+		{
 			name:    "https",
 			input:   "https://github.com/org/repo",
 			wantKey: "github.com/org/repo",
+		},
+		{
+			name:    "https nested group",
+			input:   "https://gitlab.example.com/org/subgroup/team/repo.git",
+			wantKey: "gitlab.example.com/org/subgroup/team/repo",
 		},
 		{
 			name:    "file",
