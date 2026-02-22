@@ -28,8 +28,8 @@ func SpecFromKey(repoKey string) string {
 		return strings.TrimSpace(repoKey)
 	}
 	host := parts[0]
-	owner := parts[1]
-	repoName := parts[2]
+	owner := strings.Join(parts[1:len(parts)-1], "/")
+	repoName := parts[len(parts)-1]
 	return fmt.Sprintf("git@%s:%s/%s.git", host, owner, repoName)
 }
 
