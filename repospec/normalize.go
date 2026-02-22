@@ -11,6 +11,7 @@ type Spec struct {
 	Owner   string
 	Repo    string
 	RepoKey string
+	IsSSH   bool
 }
 
 func Normalize(input string) (Spec, error) {
@@ -87,6 +88,7 @@ func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 		Owner:   owner,
 		Repo:    repo,
 		RepoKey: fmt.Sprintf("%s/%s/%s", host, owner, repo),
+		IsSSH:   isSSH,
 	}
 	return spec, nil
 }

@@ -22,6 +22,10 @@ func DisplayName(input string) string {
 }
 
 func SpecFromKey(repoKey string) string {
+	return SpecFromKeyWithScheme(repoKey, true)
+}
+
+func SpecFromKeyWithScheme(repoKey string, isSSH bool) string {
 	trimmed := strings.TrimSuffix(strings.TrimSpace(repoKey), ".git")
 	parts := strings.Split(trimmed, "/")
 	if len(parts) < 3 {
@@ -30,7 +34,10 @@ func SpecFromKey(repoKey string) string {
 	host := parts[0]
 	owner := strings.Join(parts[1:len(parts)-1], "/")
 	repoName := parts[len(parts)-1]
-	return fmt.Sprintf("git@%s:%s/%s.git", host, owner, repoName)
+	if isSSH {
+		return fmt.Sprintf("git@%s:%s/%s.git", host, owner, repoName)
+	}
+	return fmt.Sprintf("https://%s/%s/%s.git", host, owner, repoName)
 }
 
 func normalizeForDisplay(input string) (Spec, bool) {
