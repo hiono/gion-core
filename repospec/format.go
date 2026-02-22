@@ -31,13 +31,46 @@ func SpecFromKeyWithScheme(repoKey string, isSSH bool) string {
 	if len(parts) < 3 {
 		return strings.TrimSpace(repoKey)
 	}
-	host := parts[0]
+	hostPart := parts[0]
 	owner := strings.Join(parts[1:len(parts)-1], "/")
 	repoName := parts[len(parts)-1]
+
+	// Check if host contains port (host:port format)
+	host, port := parseHostPort(hostPart)
+
 	if isSSH {
+		if port != "" {
+			return fmt.Sprintf("ssh://git@%s:%s/%s/%s.git", host, port, owner, repoName)
+		}
 		return fmt.Sprintf("git@%s:%s/%s.git", host, owner, repoName)
 	}
+	if port != "" {
+		return fmt.Sprintf("https://%s:%s/%s/%s.git", host, port, owner, repoName)
+	}
 	return fmt.Sprintf("https://%s/%s/%s.git", host, owner, repoName)
+}
+
+func parseHostPort(hostPart string) (host, port string) {
+	colonIdx := strings.LastIndex(hostPart, ":")
+	if colonIdx > 0 {
+		potentialPort := hostPart[colonIdx+1:]
+		if isAllDigits(potentialPort) {
+			return hostPart[:colonIdx], potentialPort
+		}
+	}
+	return hostPart, ""
+}
+
+func isAllDigits(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func normalizeForDisplay(input string) (Spec, bool) {

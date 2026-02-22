@@ -8,6 +8,7 @@ import (
 
 type Spec struct {
 	Host    string
+	Port    string
 	Owner   string
 	Repo    string
 	RepoKey string
@@ -24,7 +25,7 @@ func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 		return Spec{}, fmt.Errorf("repo spec is empty")
 	}
 
-	var host string
+	var host, port string
 	var path string
 	var isSSH bool
 
@@ -42,6 +43,7 @@ func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 		}
 		if len(colons) >= 2 && isPort(rest[colons[0]+1:colons[1]]) {
 			host = rest[:colons[0]]
+			port = rest[colons[0]+1 : colons[1]]
 			path = rest[colons[1]+1:]
 		} else {
 			host = rest[:colons[0]]
@@ -83,11 +85,16 @@ func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 		return Spec{}, fmt.Errorf("host is required in repo spec: %q", input)
 	}
 
+	repoKey := fmt.Sprintf("%s/%s/%s", host, owner, repo)
+	if port != "" {
+		repoKey = fmt.Sprintf("%s:%s/%s/%s", host, port, owner, repo)
+	}
 	spec := Spec{
 		Host:    host,
+		Port:    port,
 		Owner:   owner,
 		Repo:    repo,
-		RepoKey: fmt.Sprintf("%s/%s/%s", host, owner, repo),
+		RepoKey: repoKey,
 		IsSSH:   isSSH,
 	}
 	return spec, nil

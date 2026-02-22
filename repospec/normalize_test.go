@@ -17,7 +17,7 @@ func TestNormalize(t *testing.T) {
 		{
 			name:    "ssh with port",
 			input:   "git@gitlab.example.com:2222:org/repo.git",
-			wantKey: "gitlab.example.com/org/repo",
+			wantKey: "gitlab.example.com:2222/org/repo",
 		},
 		{
 			name:    "ssh nested group",
@@ -27,17 +27,17 @@ func TestNormalize(t *testing.T) {
 		{
 			name:    "ssh with port nested group",
 			input:   "git@gitlab.example.com:2222:org/subgroup/team/repo.git",
-			wantKey: "gitlab.example.com/org/subgroup/team/repo",
+			wantKey: "gitlab.example.com:2222/org/subgroup/team/repo",
 		},
 		{
 			name:    "ssh port min boundary",
 			input:   "git@host.com:1:org/repo.git",
-			wantKey: "host.com/org/repo",
+			wantKey: "host.com:1/org/repo",
 		},
 		{
 			name:    "ssh port max boundary",
 			input:   "git@host.com:65535:org/repo.git",
-			wantKey: "host.com/org/repo",
+			wantKey: "host.com:65535/org/repo",
 		},
 		{
 			name:    "https",
@@ -115,7 +115,7 @@ func TestNormalizeWithBasePath(t *testing.T) {
 			name:     "ssh with port ignores base_path",
 			input:    "git@host.com:2222:git/org/repo.git",
 			basePath: "/git",
-			wantKey:  "host.com/git/org/repo",
+			wantKey:  "host.com:2222/git/org/repo",
 		},
 		{
 			name:     "https no base_path specified",
