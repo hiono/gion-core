@@ -50,29 +50,6 @@ func SpecFromKeyWithScheme(repoKey string, isSSH bool) string {
 	return fmt.Sprintf("https://%s/%s/%s.git", host, owner, repoName)
 }
 
-func parseHostPort(hostPart string) (host, port string) {
-	colonIdx := strings.LastIndex(hostPart, ":")
-	if colonIdx > 0 {
-		potentialPort := hostPart[colonIdx+1:]
-		if isAllDigits(potentialPort) {
-			return hostPart[:colonIdx], potentialPort
-		}
-	}
-	return hostPart, ""
-}
-
-func isAllDigits(s string) bool {
-	if len(s) == 0 {
-		return false
-	}
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
 func normalizeForDisplay(input string) (Spec, bool) {
 	trimmed := strings.TrimSpace(input)
 	if trimmed == "" {

@@ -30,6 +30,21 @@ func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 	var isSSH bool
 
 	switch {
+	case strings.HasPrefix(trimmed, "ssh://"):
+		isSSH = true
+		rest := strings.TrimPrefix(trimmed, "ssh://")
+		at := strings.Index(rest, "@")
+		if at < 0 {
+			return Spec{}, fmt.Errorf("invalid ssh repo spec: %q", input)
+		}
+		rest = rest[at+1:]
+		slashIdx := strings.Index(rest, "/")
+		if slashIdx < 0 {
+			return Spec{}, fmt.Errorf("invalid ssh repo spec: %q", input)
+		}
+		hostPart := rest[:slashIdx]
+		path = rest[slashIdx+1:]
+		host, port = parseHostPort(hostPart)
 	case strings.HasPrefix(trimmed, "git@"):
 		isSSH = true
 		at := strings.Index(trimmed, "@")
@@ -152,4 +167,15 @@ func isPort(s string) bool {
 		}
 	}
 	return true
+}
+
+func parseHostPort(hostPart string) (host, port string) {
+	colonIdx := strings.LastIndex(hostPart, ":")
+	if colonIdx > 0 {
+		potentialPort := hostPart[colonIdx+1:]
+		if isPort(potentialPort) {
+			return hostPart[:colonIdx], potentialPort
+		}
+	}
+	return hostPart, ""
 }
