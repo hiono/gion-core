@@ -10,15 +10,15 @@ func DisplaySpec(input string) string {
 	if !ok {
 		return strings.TrimSpace(input)
 	}
-	return fmt.Sprintf("git@%s:%s/%s.git", spec.Host, spec.Owner, spec.Repo)
+	return fmt.Sprintf("git@%s:%s/%s.git", spec.EndPoint.Host, spec.Registry.Group, spec.Repository.Repo)
 }
 
 func DisplayName(input string) string {
 	spec, ok := normalizeForDisplay(input)
-	if !ok || spec.Repo == "" {
+	if !ok || spec.Repository.Repo == "" {
 		return strings.TrimSpace(input)
 	}
-	return spec.Repo
+	return spec.Repository.Repo
 }
 
 func SpecFromKey(repoKey string) string {

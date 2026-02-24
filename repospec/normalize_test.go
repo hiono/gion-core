@@ -22,12 +22,17 @@ func TestNormalize(t *testing.T) {
 		{
 			name:    "ssh nested group",
 			input:   "git@gitlab.example.com:org/subgroup/team/repo.git",
-			wantKey: "gitlab.example.com/org/subgroup/team/repo",
+			wantKey: "gitlab.example.com/org/subgroup-team-repo",
 		},
 		{
 			name:    "ssh with port nested group",
 			input:   "git@gitlab.example.com:2222:org/subgroup/team/repo.git",
-			wantKey: "gitlab.example.com:2222/org/subgroup/team/repo",
+			wantKey: "gitlab.example.com:2222/org/subgroup-team-repo",
+		},
+		{
+			name:    "https nested group",
+			input:   "https://gitlab.example.com/org/subgroup/team/repo.git",
+			wantKey: "gitlab.example.com/org/subgroup-team-repo",
 		},
 		{
 			name:    "ssh port min boundary",
@@ -47,7 +52,7 @@ func TestNormalize(t *testing.T) {
 		{
 			name:    "https nested group",
 			input:   "https://gitlab.example.com/org/subgroup/team/repo.git",
-			wantKey: "gitlab.example.com/org/subgroup/team/repo",
+			wantKey: "gitlab.example.com/org/subgroup-team-repo",
 		},
 		{
 			name:    "file",
@@ -103,25 +108,25 @@ func TestNormalizeWithBasePath(t *testing.T) {
 			name:     "https nested group with base_path",
 			input:    "https://host.com/git/org/team/repo.git",
 			basePath: "/git",
-			wantKey:  "host.com/org/team/repo",
+			wantKey:  "host.com/org/team-repo",
 		},
 		{
 			name:     "ssh ignores base_path",
 			input:    "git@host.com:git/org/repo.git",
 			basePath: "/git",
-			wantKey:  "host.com/git/org/repo",
+			wantKey:  "host.com/git/org-repo",
 		},
 		{
 			name:     "ssh with port ignores base_path",
 			input:    "git@host.com:2222:git/org/repo.git",
 			basePath: "/git",
-			wantKey:  "host.com:2222/git/org/repo",
+			wantKey:  "host.com:2222/git/org-repo",
 		},
 		{
 			name:     "https no base_path specified",
 			input:    "https://host.com/git/org/repo.git",
 			basePath: "",
-			wantKey:  "host.com/git/org/repo",
+			wantKey:  "host.com/git/org-repo",
 		},
 		{
 			name:     "https base_path not matching",

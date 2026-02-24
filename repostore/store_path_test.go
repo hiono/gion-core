@@ -4,14 +4,25 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tasuku43/gion-core/repospec"
+	"github.com/hiono/gion-core/repospec"
 )
 
 func TestStorePath(t *testing.T) {
 	bareRoot := filepath.Join("/tmp", "bare")
-	spec := repospec.Spec{Host: "github.com", Owner: "org", Repo: "repo"}
+	spec := repospec.Spec{
+		EndPoint: repospec.EndPoint{
+			Host: "github.com",
+		},
+		Registry: repospec.Registry{
+			Group: "org",
+		},
+		Repository: repospec.Repository{
+			Repo: "repo",
+		},
+	}
 	got := StorePath(bareRoot, spec)
-	want := filepath.Join(bareRoot, "github.com", "org", "repo.git")
+	// Level1: github.com/org, Level2: repo
+	want := filepath.Join(bareRoot, "github.com/org", "repo.git")
 	if got != want {
 		t.Fatalf("StorePath() = %q, want %q", got, want)
 	}

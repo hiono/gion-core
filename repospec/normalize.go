@@ -6,15 +6,6 @@ import (
 	"strings"
 )
 
-type Spec struct {
-	Host    string
-	Port    string
-	Owner   string
-	Repo    string
-	RepoKey string
-	IsSSH   bool
-}
-
 func Normalize(input string) (Spec, error) {
 	return NormalizeWithBasePath(input, "")
 }
@@ -92,7 +83,7 @@ func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 		path = removeBasePath(path, basePath)
 	}
 
-	owner, repo, err := splitOwnerRepo(path)
+	owner, pathPartsForSlug, _, err := splitOwnerRepo(path)
 	if err != nil {
 		return Spec{}, err
 	}
@@ -100,15 +91,37 @@ func NormalizeWithBasePath(input string, basePath string) (Spec, error) {
 		return Spec{}, fmt.Errorf("host is required in repo spec: %q", input)
 	}
 
-	repoKey := fmt.Sprintf("%s/%s/%s", host, owner, repo)
-	if port != "" {
-		repoKey = fmt.Sprintf("%s:%s/%s/%s", host, port, owner, repo)
+	repoKey := buildRepoKey(host, port, owner, pathPartsForSlug)
+	provider := DetectProvider(host)
+
+	// Split fullPath into subgroups + repo
+	// pathPartsForSlug = [group, subgroup, ..., repo]
+	// subgroups = pathPartsForSlug without the last element (repo)
+	var subgroups []string
+	var repoName string
+	if len(pathPartsForSlug) > 1 {
+		subgroups = pathPartsForSlug[:len(pathPartsForSlug)-1]
+		repoName = pathPartsForSlug[len(pathPartsForSlug)-1]
+	} else if len(pathPartsForSlug) == 1 {
+		repoName = pathPartsForSlug[0]
+	} else {
+		repoName = ""
 	}
+
 	spec := Spec{
-		Host:    host,
-		Port:    port,
-		Owner:   owner,
-		Repo:    repo,
+		EndPoint: EndPoint{
+			Host:     host,
+			Port:     port,
+			BasePath: basePath,
+		},
+		Registry: Registry{
+			Provider:  provider,
+			Group:     owner,
+			SubGroups: subgroups,
+		},
+		Repository: Repository{
+			Repo: repoName,
+		},
 		RepoKey: repoKey,
 		IsSSH:   isSSH,
 	}
@@ -124,27 +137,38 @@ func removeBasePath(path string, basePath string) string {
 	return path
 }
 
-func splitOwnerRepo(path string) (string, string, error) {
+func splitOwnerRepo(path string) (string, []string, []string, error) {
 	trimmed := strings.Trim(path, "/")
 	if trimmed == "" {
-		return "", "", fmt.Errorf("repo path is empty")
+		return "", nil, nil, fmt.Errorf("repo path is empty")
 	}
 
 	parts := strings.Split(trimmed, "/")
 	if len(parts) < 2 {
-		return "", "", fmt.Errorf("repo path must have at least owner/repo")
+		return "", nil, nil, fmt.Errorf("repo path must be host/group/repo or host/group/subgroup/repo")
 	}
 
 	repo := strings.TrimSuffix(parts[len(parts)-1], ".git")
 	if repo == "" {
-		return "", "", fmt.Errorf("repo name cannot be empty")
-	}
-	owner := strings.Join(parts[:len(parts)-1], "/")
-	if owner == "" {
-		return "", "", fmt.Errorf("owner/namespace cannot be empty")
+		return "", nil, nil, fmt.Errorf("repo name cannot be empty")
 	}
 
-	return owner, repo, nil
+	owner := parts[0]
+	if owner == "" {
+		return "", nil, nil, fmt.Errorf("owner/namespace cannot be empty")
+	}
+
+	// pathPartsForSlug: parts after owner (groups + repo), with .git stripped
+	pathPartsForSlug := make([]string, len(parts)-1)
+	copy(pathPartsForSlug, parts[1:])
+	pathPartsForSlug[len(pathPartsForSlug)-1] = repo
+
+	// fullPath: all parts including owner, with .git stripped
+	fullPath := make([]string, len(parts))
+	copy(fullPath, parts)
+	fullPath[len(fullPath)-1] = repo
+
+	return owner, pathPartsForSlug, fullPath, nil
 }
 
 func findAllColons(s string) []int {
@@ -178,4 +202,12 @@ func parseHostPort(hostPart string) (host, port string) {
 		}
 	}
 	return hostPart, ""
+}
+
+func buildRepoKey(host, port string, owner string, pathParts []string) string {
+	slug := Slugify(pathParts)
+	if port != "" {
+		return fmt.Sprintf("%s:%s/%s/%s", host, port, owner, slug)
+	}
+	return fmt.Sprintf("%s/%s/%s", host, owner, slug)
 }
