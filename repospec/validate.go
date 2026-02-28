@@ -17,9 +17,23 @@ func init() {
 }
 
 type ValidationError struct {
+	Code    int
 	Field   string
 	Message string
 }
+
+const (
+	ErrInvalidHost     = 1001
+	ErrInvalidGroup    = 1002
+	ErrInvalidRepo     = 1003
+	ErrInvalidPort     = 1004
+	ErrInvalidBasePath = 1005
+	ErrInvalidSubGroup = 1006
+	ErrInvalidProvider = 1007
+	ErrInvalidRepoKey  = 1008
+	ErrInvalidURL      = 1009
+	ErrInvalidSpec     = 1010
+)
 
 func (e ValidationError) Error() string {
 	if e.Field != "" {
@@ -31,19 +45,19 @@ func (e ValidationError) Error() string {
 func ValidateSpec(spec Spec) error {
 	// Basic validation first
 	if spec.EndPoint.Host == "" {
-		return &ValidationError{Field: "endPoint.host", Message: "host is required"}
+		return &ValidationError{Code: ErrInvalidHost, Field: "endPoint.host", Message: "host is required"}
 	}
 	if spec.Registry.Group == "" {
-		return &ValidationError{Field: "registry.group", Message: "group is required"}
+		return &ValidationError{Code: ErrInvalidGroup, Field: "registry.group", Message: "group is required"}
 	}
 	if spec.Repository.Repo == "" {
-		return &ValidationError{Field: "repository.repo", Message: "repo is required"}
+		return &ValidationError{Code: ErrInvalidRepo, Field: "repository.repo", Message: "repo is required"}
 	}
 
 	// Additional validation: no .git in middle
 	for i, part := range spec.Registry.SubGroups {
 		if strings.HasSuffix(part, ".git") && i < len(spec.Registry.SubGroups)-1 {
-			return &ValidationError{Field: "registry.subGroups", Message: ".git suffix not allowed in subgroups"}
+			return &ValidationError{Code: ErrInvalidSubGroup, Field: "registry.subGroups", Message: ".git suffix not allowed in subgroups"}
 		}
 	}
 
@@ -53,18 +67,18 @@ func ValidateSpec(spec Spec) error {
 		// Port should be numeric
 		for _, c := range port {
 			if c < '0' || c > '9' {
-				return &ValidationError{Field: "endPoint.port", Message: "port must be numeric"}
+				return &ValidationError{Code: ErrInvalidPort, Field: "endPoint.port", Message: "port must be numeric"}
 			}
 		}
 		// Validate port range
 		if port == "0" || len(port) > 5 || (len(port) == 5 && port > "65535") {
-			return &ValidationError{Field: "endPoint.port", Message: "port must be between 1 and 65535"}
+			return &ValidationError{Code: ErrInvalidPort, Field: "endPoint.port", Message: "port must be between 1 and 65535"}
 		}
 	}
 
 	// Validate basePath format if present
 	if spec.EndPoint.BasePath != "" && !strings.HasPrefix(spec.EndPoint.BasePath, "/") {
-		return &ValidationError{Field: "endPoint.basePath", Message: "basePath must start with /"}
+		return &ValidationError{Code: ErrInvalidBasePath, Field: "endPoint.basePath", Message: "basePath must start with /"}
 	}
 
 	// Provider-specific constraints
@@ -81,6 +95,7 @@ func validateProviderConstraints(spec Spec) error {
 		// GitHub and Bitbucket do not support subGroups (only owner/repo)
 		if len(spec.Registry.SubGroups) > 0 {
 			return &ValidationError{
+				Code:    ErrInvalidSubGroup,
 				Field:   "registry.subGroups",
 				Message: fmt.Sprintf("subGroups not supported for %s (use owner/repo format)", spec.Registry.Provider),
 			}
@@ -89,6 +104,7 @@ func validateProviderConstraints(spec Spec) error {
 		// GitLab supports nested groups (max 20 levels total = 19 subgroups + 1 repo)
 		if len(spec.Registry.SubGroups) > 19 {
 			return &ValidationError{
+				Code:    ErrInvalidSubGroup,
 				Field:   "registry.subGroups",
 				Message: "subGroups exceeds maximum depth of 19 for GitLab",
 			}
@@ -99,7 +115,7 @@ func validateProviderConstraints(spec Spec) error {
 
 func ValidateRepoKey(repoKey string) error {
 	if strings.ContainsAny(repoKey, " \t\r\n") {
-		return &ValidationError{Field: "repoKey", Message: "must not contain whitespace"}
+		return &ValidationError{Code: ErrInvalidRepoKey, Field: "repoKey", Message: "must not contain whitespace"}
 	}
 
 	trimmed := strings.TrimSuffix(strings.TrimSpace(repoKey), ".git")
@@ -107,6 +123,7 @@ func ValidateRepoKey(repoKey string) error {
 
 	if len(parts) < 3 {
 		return &ValidationError{
+			Code:    ErrInvalidRepoKey,
 			Field:   "repoKey",
 			Message: "must be host/group/repo or host/group/subgroup/repo",
 		}
@@ -115,6 +132,7 @@ func ValidateRepoKey(repoKey string) error {
 	for i, part := range parts {
 		if strings.TrimSpace(part) == "" {
 			return &ValidationError{
+				Code:    ErrInvalidRepoKey,
 				Field:   "repoKey",
 				Message: "must be host/group/repo or host/group/subgroup/repo",
 			}
@@ -122,6 +140,7 @@ func ValidateRepoKey(repoKey string) error {
 		// Validate no .git suffix in middle parts
 		if strings.HasSuffix(part, ".git") && i < len(parts)-1 {
 			return &ValidationError{
+				Code:    ErrInvalidRepoKey,
 				Field:   "repoKey",
 				Message: ".git suffix only allowed at end",
 			}
@@ -136,7 +155,7 @@ func ValidateURL(url string) error {
 	trimmed := strings.TrimSpace(url)
 
 	if trimmed == "" {
-		return &ValidationError{Field: "url", Message: "cannot be empty"}
+		return &ValidationError{Code: ErrInvalidURL, Field: "url", Message: "cannot be empty"}
 	}
 
 	// Check for valid URL patterns
@@ -147,6 +166,7 @@ func ValidateURL(url string) error {
 
 	if !isSSH && !isHTTPS && !isHTTP && !isFile {
 		return &ValidationError{
+			Code:    ErrInvalidURL,
 			Field:   "url",
 			Message: "must be SSH (git@host:path), HTTPS, HTTP, or file:// URL",
 		}
@@ -155,7 +175,10 @@ func ValidateURL(url string) error {
 	// Parse and validate the URL using Normalize
 	_, err := Normalize(trimmed)
 	if err != nil {
-		return &ValidationError{Field: "url", Message: err.Error()}
+		if vErr, ok := err.(*ValidationError); ok {
+			return vErr
+		}
+		return &ValidationError{Code: ErrInvalidURL, Field: "url", Message: err.Error()}
 	}
 
 	return nil
