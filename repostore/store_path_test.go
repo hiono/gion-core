@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hiono/gion-core/repospec"
+	"github.com/tasuku43/gion-core/repospec"
 )
 
 func TestStorePath(t *testing.T) {

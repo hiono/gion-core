@@ -3,7 +3,7 @@ package repostore
 import (
 	"path/filepath"
 
-	"github.com/hiono/gion-core/repospec"
+	"github.com/tasuku43/gion-core/repospec"
 )
 
 func StorePath(bareRoot string, spec repospec.Spec) string {
